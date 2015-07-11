@@ -9,7 +9,11 @@ To install, use composer:
 
 
 ## How to use
+```
+$resumable = new Resumable($request,$response);
+$resumable->process();
 
+```
 
 
 
