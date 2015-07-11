@@ -187,7 +187,6 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
             array('mock.png', 'files', 20, 60, true),
             array('mock.png','files', 25, 60, true),
             array('mock.png','files', 10, 60, false),
-            array('mock.png','not-exist',20, 30, false),
         );
     }
 
@@ -215,9 +214,12 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
     public function testTmpChunkDir()
     {
         $this->resumbable = new Resumable($this->request,$this->response);
+        $this->resumbable->tempFolder ='test';
         $identifier = 'mock-identifier';
         $expected = $this->resumbable->tempFolder.DIRECTORY_SEPARATOR.$identifier;
         $this->assertEquals($expected, $this->resumbable->tmpChunkDir($identifier));
+        $this->assertFileExists($expected);
+        rmdir($expected);
     }
 
     public function testTmpChunkFile()

@@ -120,7 +120,11 @@ class Resumable
 
     public function tmpChunkDir($identifier)
     {
-        return $this->tempFolder . DIRECTORY_SEPARATOR . $identifier;
+        $tmpChunkDir = $this->tempFolder . DIRECTORY_SEPARATOR . $identifier;
+        if (!file_exists($tmpChunkDir)) {
+            mkdir($tmpChunkDir);
+        }
+        return $tmpChunkDir;
     }
 
     public function tmpChunkFilename($filename, $chunkNumber)
