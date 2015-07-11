@@ -22,8 +22,23 @@ class SimpleResponseTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function testHeader()
+    public function headerProvider()
     {
+        return array(
+            array(404,404),
+            array(200,200),
+            array(500,404),
+        );
+    }
+
+    /**
+     * @runInSeparateProcess
+     * @dataProvider headerProvider
+     */
+    public function testHeader($statusCode, $expectd)
+    {
+       $this->response->header($statusCode);
+       $this->assertEquals($expectd, http_response_code());
 
     }
 
