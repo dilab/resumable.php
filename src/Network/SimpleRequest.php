@@ -11,7 +11,15 @@ class SimpleRequest implements Request
      */
     public function is($type)
     {
-        $type = strtolower($type);
+        switch (strtolower($type)) {
+            case 'post':
+                return isset($_POST)&&!empty($_POST);
+                break;
+            case 'get':
+                return isset($_GET)&&!empty($_GET);
+                break;
+        }
+        return false;
     }
 
     /**
@@ -20,7 +28,15 @@ class SimpleRequest implements Request
      */
     public function data($requestType)
     {
-        // TODO: Implement data() method.
+        switch (strtolower($requestType)) {
+            case 'post':
+                return isset($_POST)?$_POST:array();
+                break;
+            case 'get':
+                return isset($_GET)?$_GET:array();
+                break;
+        }
+        return array();
     }
 
     /**
@@ -28,7 +44,11 @@ class SimpleRequest implements Request
      */
     public function file()
     {
-        // TODO: Implement file() method.
+        if (!isset($_FILES) || empty($_FILES)) {
+            return array();
+        }
+        $files = array_values($_FILES);
+        return array_shift($files);
     }
 
 }
