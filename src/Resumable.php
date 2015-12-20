@@ -145,6 +145,8 @@ class Resumable
     {
         $this->_log('Beginning of create files from chunks');
 
+        natsort($chunkFiles);
+
         $destFile = new File($destFile, true);
         foreach ($chunkFiles as $chunkFile) {
             $file = new File($chunkFile);
