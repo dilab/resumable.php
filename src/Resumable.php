@@ -51,9 +51,9 @@ class Resumable
 
     public function handleTestChunk()
     {
-        $identifier = $this->_resumableParam('identifier');
-        $filename = $this->_resumableParam('filename');
-        $chunkNumber = $this->_resumableParam('chunkNumber');
+        $identifier = $this->resumableParam('identifier');
+        $filename = $this->resumableParam('filename');
+        $chunkNumber = $this->resumableParam('chunkNumber');
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             return $this->response->header(404);
@@ -65,11 +65,11 @@ class Resumable
     public function handleChunk()
     {
         $file = $this->request->file();
-        $identifier = $this->_resumableParam('identifier');
-        $filename = $this->_resumableParam('filename');
-        $chunkNumber = $this->_resumableParam('chunkNumber');
-        $chunkSize = $this->_resumableParam('chunkSize');
-        $totalSize = $this->_resumableParam('totalSize');
+        $identifier = $this->resumableParam('identifier');
+        $filename = $this->resumableParam('filename');
+        $chunkNumber = $this->resumableParam('chunkNumber');
+        $chunkSize = $this->resumableParam('chunkSize');
+        $totalSize = $this->resumableParam('totalSize');
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             $chunkFile = $this->tmpChunkDir($identifier) . DIRECTORY_SEPARATOR . $this->tmpChunkFilename($filename, $chunkNumber);
@@ -77,18 +77,22 @@ class Resumable
         }
 
         if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
-            $tmpFolder = new Folder($this->tmpChunkDir($identifier));
-            $chunkFiles = $tmpFolder->read(true, true, true)[1];
-            $this->createFileFromChunks($chunkFiles, $this->uploadFolder . DIRECTORY_SEPARATOR . $filename);
-            if ($this->deleteTmpFolder) {
-                $tmpFolder->delete();
-            }
+            $this->createFileAndDeleteTmp($identifier, $filename);
         }
 
         return $this->response->header(200);
     }
 
-    private function _resumableParam($shortName)
+    private function createFileAndDeleteTmp($identifier, $filename)
+    {
+        $tmpFolder = new Folder($this->tmpChunkDir($identifier));
+        $chunkFiles = $tmpFolder->read(true, true, true)[1];
+        if ($this->createFileFromChunks($chunkFiles, $this->uploadFolder . DIRECTORY_SEPARATOR . $filename) && $this->deleteTmpFolder) {
+            $tmpFolder->delete();
+        }
+    }
+
+    private function resumableParam($shortName)
     {
         $resumableParams = $this->resumableParams();
         if (!isset($resumableParams['resumable' . ucfirst($shortName)])) {
@@ -143,7 +147,7 @@ class Resumable
 
     public function createFileFromChunks($chunkFiles, $destFile)
     {
-        $this->_log('Beginning of create files from chunks');
+        $this->log('Beginning of create files from chunks');
 
         natsort($chunkFiles);
 
@@ -152,10 +156,10 @@ class Resumable
             $file = new File($chunkFile);
             $destFile->append($file->read());
 
-            $this->_log('Append ', ['chunk file' => $chunkFile]);
+            $this->log('Append ', ['chunk file' => $chunkFile]);
         }
 
-        $this->_log('End of create files from chunks');
+        $this->log('End of create files from chunks');
         return $destFile->exists();
     }
 
@@ -178,10 +182,12 @@ class Resumable
         $this->response = $response;
     }
 
-    private function _log($msg, $ctx = array())
+    private function log($msg, $ctx = array())
     {
         if ($this->debug) {
             $this->log->addDebug($msg, $ctx);
         }
     }
+
+
 }
