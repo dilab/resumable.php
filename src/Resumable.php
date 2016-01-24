@@ -38,7 +38,7 @@ class Resumable
     protected $filepath;
 
     const SLUGIFY = true;
-    
+
     public function __construct(Request $request, Response $response)
     {
         $this->request = $request;
@@ -47,7 +47,7 @@ class Resumable
         $this->log = new Logger('debug');
         $this->log->pushHandler(new StreamHandler('debug.log', Logger::DEBUG));
     }
-
+    
     public function process()
     {
         if (!empty($this->resumableParams())) {
@@ -79,6 +79,16 @@ class Resumable
     public function getFilename()
     {
         return $this->filename;
+    }
+
+    /**
+     * Get final filename.
+     *
+     * @return string Final filename
+     */
+    public function getOriginalFilename()
+    {
+        return $this->originalFilename;
     }
 
     /**
