@@ -8,7 +8,7 @@ use Dilab\Network\Response;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-use Dilab\Helper\Slugify;
+use Cocur\Slugify;
 
 class Resumable
 {
@@ -138,12 +138,13 @@ class Resumable
     {
         $tmpFolder = new Folder($this->tmpChunkDir($identifier));
         $chunkFiles = $tmpFolder->read(true, true, true)[1];
-
+        
         // if the user has set a filename (or decided to slugify it), change the final filename
         if (null !== $this->filename) {
             // optionaly create a unique slugified filename
             if ($this->filename === static::SLUGIFY) {
-                $filename = Slugify::slugify($filename);
+                $slugify = new Slugify();
+                $filename = $slugify->slugify($filename);
             } else {
                 $filename = $this->createSafeFilename($this->filename, $filename);
             }
