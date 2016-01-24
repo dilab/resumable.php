@@ -108,7 +108,7 @@ class Resumable
             return $this->response->header(200);
         }
     }
-
+    
     public function handleChunk()
     {
         $file = $this->request->file();
@@ -138,7 +138,7 @@ class Resumable
     {
         $tmpFolder = new Folder($this->tmpChunkDir($identifier));
         $chunkFiles = $tmpFolder->read(true, true, true)[1];
-        
+
         // if the user has set a filename (or decided to slugify it), change the final filename
         if (null !== $this->filename) {
             // optionaly create a unique slugified filename
