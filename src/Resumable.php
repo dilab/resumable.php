@@ -72,7 +72,7 @@ class Resumable
      *
      * @return string Final filename
      */
-    public function getFilename($filename)
+    public function getFilename()
     {
         return $this->filename;
     }
@@ -108,7 +108,7 @@ class Resumable
             return $this->response->header(200);
         }
     }
-    
+
     public function handleChunk()
     {
         $file = $this->request->file();
