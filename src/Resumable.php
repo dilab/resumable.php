@@ -76,13 +76,14 @@ class Resumable
     {
         return $this->filename;
     }
-
+    
     /**
      * Makes sure the extension never gets overriden by user defined filname.
      *
      * @param string User defined filename
      * @param string Original filename
      * @return string Filename that always has an extension from the original file
+     * adadgio-pr
      */
     private function createSafeFilename($filename, $originalFilename)
     {
