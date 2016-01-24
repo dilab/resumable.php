@@ -24,7 +24,7 @@ namespace Dilab\Helper;
 class Slugify implements SlugifyInterface
 {
     const LOWERCASE_NUMBERS_DASHES = '/([^A-Za-z0-9]|-)+/';
-    
+
     /** @var array */
     protected $rules = array(
         // Numeric characters, superscript
