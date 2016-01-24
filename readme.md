@@ -29,10 +29,20 @@ $resumable->process();
 
 ```
 
+## Options ##
+### Setting custom filename ###
 
+```
+// custom filename (extension from original file will be kept)
+// @todo Add resumable->getExtension() method
+$resumable->setFilename('myfile');
+
+// automatically slugified filename
+// @todo Not yet working, better use as 3d party library https://github.com/cocur/slugify
+$resumable->setFilename(RESUMABLE::SLUGIFY);
+```
 
 ## Testing
 ```
 $ ./vendor/bin/phpunit
 ```
-

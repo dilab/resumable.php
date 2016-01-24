@@ -8,6 +8,8 @@ use Dilab\Network\Response;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
+use Dilab\Helper\Slugify;
+
 class Resumable
 {
     public $debug = false;
@@ -29,6 +31,10 @@ class Resumable
 
     protected $log;
 
+    protected $filename;
+
+    const SLUGIFY = true;
+
     public function __construct(Request $request, Response $response)
     {
         $this->request = $request;
@@ -47,6 +53,47 @@ class Resumable
                 $this->handleTestChunk();
             }
         }
+    }
+
+    /**
+     * Set final filename.
+     *
+     * @param string Final filename
+     */
+    public function setFilename($filename)
+    {
+        $this->filename = $filename;
+
+        return $this;
+    }
+
+    /**
+     * Get final filename.
+     *
+     * @return string Final filename
+     */
+    public function getFilename($filename)
+    {
+        return $this->filename;
+    }
+
+    /**
+     * Makes sure the extension never gets overriden by user defined filname.
+     *
+     * @param string User defined filename
+     * @param string Original filename
+     * @return string Filename that always has an extension from the original file
+     */
+    private function createSafeFilename($filename, $originalFilename)
+    {
+        $parts = explode('.', $originalFilename);
+        $ext = end($parts); // get extension
+
+        // remove extension from filename if any
+        $filename = str_replace(sprintf('.%s', $ext), '', $filename);
+
+        // return safe filename with appended extension from original filename
+        return $filename.sprintf('.%s', $ext);
     }
 
     public function handleTestChunk()
@@ -83,10 +130,25 @@ class Resumable
         return $this->response->header(200);
     }
 
+    /**
+     * Create the final file from chunks
+     *
+     */
     private function createFileAndDeleteTmp($identifier, $filename)
     {
         $tmpFolder = new Folder($this->tmpChunkDir($identifier));
         $chunkFiles = $tmpFolder->read(true, true, true)[1];
+
+        // if the user has set a filename (or decided to slugify it), change the final filename
+        if (null !== $this->filename) {
+            // optionaly create a unique slugified filename
+            if ($this->filename === static::SLUGIFY) {
+                $filename = Slugify::slugify($filename);
+            } else {
+                $filename = $this->createSafeFilename($this->filename, $filename);
+            }
+        }
+
         if ($this->createFileFromChunks($chunkFiles, $this->uploadFolder . DIRECTORY_SEPARATOR . $filename) && $this->deleteTmpFolder) {
             $tmpFolder->delete();
         }
