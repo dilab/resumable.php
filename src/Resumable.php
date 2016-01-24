@@ -8,8 +8,6 @@ use Dilab\Network\Response;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-use Cocur\Slugify;
-
 class Resumable
 {
     public $debug = false;
@@ -47,7 +45,7 @@ class Resumable
         $this->log = new Logger('debug');
         $this->log->pushHandler(new StreamHandler('debug.log', Logger::DEBUG));
     }
-    
+
     public function process()
     {
         if (!empty($this->resumableParams())) {
@@ -161,24 +159,18 @@ class Resumable
 
         // save original filename
         $this->originalFilename = $filename;
-
+        
         // if the user has set a filename (or decided to slugify it), change the final filename
         if (null !== $this->filename) {
-            // optionaly create a unique slugified filename
-            if ($this->filename === static::SLUGIFY) {
-                $slugify = new Slugify();
-                $filename = $slugify->slugify($filename);
-            } else {
-                $filename = $this->createSafeFilename($this->filename, $filename);
-            }
+            $this->filename = $this->createSafeFilename($this->filename, $filename);
         }
 
         // replace filename reference by the final file
-        $this->filename = $filename;
         $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR . $this->filename;
 
         if ($this->createFileFromChunks($chunkFiles, $this->filepath) && $this->deleteTmpFolder) {
             $tmpFolder->delete();
+            $this->uploadComplete = true;
         }
     }
 
