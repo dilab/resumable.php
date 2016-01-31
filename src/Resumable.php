@@ -29,6 +29,14 @@ class Resumable
 
     protected $log;
 
+    protected $filename;
+
+    protected $originalFilename;
+
+    protected $filepath;
+
+    const SLUGIFY = true;
+
     public function __construct(Request $request, Response $response)
     {
         $this->request = $request;
@@ -47,6 +55,63 @@ class Resumable
                 $this->handleTestChunk();
             }
         }
+    }
+
+    /**
+     * Set final filename.
+     *
+     * @param string Final filename
+     */
+    public function setFilename($filename)
+    {
+        $this->filename = $filename;
+
+        return $this;
+    }
+
+    /**
+     * Get final filename.
+     *
+     * @return string Final filename
+     */
+    public function getFilename()
+    {
+        return $this->filename;
+    }
+
+    /**
+     * Get final filename.
+     *
+     * @return string Final filename
+     */
+    public function getOriginalFilename()
+    {
+        return $this->originalFilename;
+    }
+
+    /**
+     * Get final filapath.
+     *
+     * @return string Final filename
+     */
+    public function getFilepath()
+    {
+        return $this->filepath;
+    }
+
+    /**
+     * Makes sure the orginal extension never gets overriden by user defined filename.
+     *
+     * @param string User defined filename
+     * @param string Original filename
+     * @return string Filename that always has an extension from the original file
+     */
+    private function createSafeFilename($filename, $originalFilename)
+    {
+        $filename = $this->removeExtension($filename);
+        $extension = $this->findExtension($originalFilename);
+
+        return sprintf('%s.%s', $filename, $extension);
     }
 
     public function handleTestChunk()
@@ -83,12 +148,29 @@ class Resumable
         return $this->response->header(200);
     }
 
+    /**
+     * Create the final file from chunks
+     *
+     */
     private function createFileAndDeleteTmp($identifier, $filename)
     {
         $tmpFolder = new Folder($this->tmpChunkDir($identifier));
         $chunkFiles = $tmpFolder->read(true, true, true)[1];
-        if ($this->createFileFromChunks($chunkFiles, $this->uploadFolder . DIRECTORY_SEPARATOR . $filename) && $this->deleteTmpFolder) {
+
+        // save original filename
+        $this->originalFilename = $filename;
+        
+        // if the user has set a filename (or decided to slugify it), change the final filename
+        if (null !== $this->filename) {
+            $this->filename = $this->createSafeFilename($this->filename, $filename);
+        }
+
+        // replace filename reference by the final file
+        $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR . $this->filename;
+
+        if ($this->createFileFromChunks($chunkFiles, $this->filepath) && $this->deleteTmpFolder) {
             $tmpFolder->delete();
+            $this->uploadComplete = true;
         }
     }
 
@@ -189,5 +271,19 @@ class Resumable
         }
     }
 
+    private function findExtension($filename)
+    {
+        $parts = explode('.', basename($filename));
 
+        return end($parts);
+    }
+
+    private function removeExtension($filename)
+    {
+        $parts = explode('.', basename($filename));
+        $ext = end($parts); // get extension
+
+        // remove extension from filename if any
+        return str_replace(sprintf('.%s', $ext), '', $filename);
+    }
 }
