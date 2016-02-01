@@ -35,7 +35,9 @@ class Resumable
 
     protected $filepath;
 
-    const SLUGIFY = true;
+    protected $extension;
+
+    protected $isUploadComplete = false;
 
     public function __construct(Request $request, Response $response)
     {
@@ -55,6 +57,16 @@ class Resumable
                 $this->handleTestChunk();
             }
         }
+    }
+
+    /**
+     * Get isUploadComplete
+     *
+     * @return boolean
+     */
+    public function isUploadComplete()
+    {
+        return $this->isUploadComplete;
     }
 
     /**
@@ -100,6 +112,16 @@ class Resumable
     }
 
     /**
+     * Get final extension.
+     *
+     * @return string Final extension name
+     */
+    public function getExtension()
+    {
+        return $this->extension;
+    }
+
+    /**
      * Makes sure the orginal extension never gets overriden by user defined filename.
      *
      * @param string User defined filename
@@ -126,7 +148,7 @@ class Resumable
             return $this->response->header(200);
         }
     }
-
+    
     public function handleChunk()
     {
         $file = $this->request->file();
@@ -142,6 +164,7 @@ class Resumable
         }
 
         if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
+            $this->isUploadComplete = true;
             $this->createFileAndDeleteTmp($identifier, $filename);
         }
 
@@ -159,7 +182,7 @@ class Resumable
 
         // save original filename
         $this->originalFilename = $filename;
-        
+
         // if the user has set a filename (or decided to slugify it), change the final filename
         if (null !== $this->filename) {
             $this->filename = $this->createSafeFilename($this->filename, $filename);
@@ -167,6 +190,7 @@ class Resumable
 
         // replace filename reference by the final file
         $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR . $this->filename;
+        $this->extension = $this->findExtension($this->filepath);
 
         if ($this->createFileFromChunks($chunkFiles, $this->filepath) && $this->deleteTmpFolder) {
             $tmpFolder->delete();
