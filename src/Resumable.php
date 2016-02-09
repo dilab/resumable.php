@@ -31,11 +31,15 @@ class Resumable
 
     protected $filename;
 
-    protected $originalFilename;
-
     protected $filepath;
 
-    const SLUGIFY = true;
+    protected $extension;
+
+    protected $originalFilename;
+
+    protected $isUploadComplete = false;
+
+    const WITHOUT_EXTENSION = true;
 
     public function __construct(Request $request, Response $response)
     {
@@ -44,6 +48,19 @@ class Resumable
 
         $this->log = new Logger('debug');
         $this->log->pushHandler(new StreamHandler('debug.log', Logger::DEBUG));
+
+        $this->preProcess();
+    }
+
+    // sets original filename and extenstion, blah blah
+    public function preProcess()
+    {
+        if (!empty($this->resumableParams())) {
+            if (!empty($this->request->file())) {
+                $this->extension = $this->findExtension($this->resumableParam('filename'));
+                $this->originalFilename = $this->resumableParam('filename');
+            }
+        }
     }
 
     public function process()
@@ -55,6 +72,16 @@ class Resumable
                 $this->handleTestChunk();
             }
         }
+    }
+
+    /**
+     * Get isUploadComplete
+     *
+     * @return boolean
+     */
+    public function isUploadComplete()
+    {
+        return $this->isUploadComplete;
     }
 
     /**
@@ -84,9 +111,13 @@ class Resumable
      *
      * @return string Final filename
      */
-    public function getOriginalFilename()
+    public function getOriginalFilename($withoutExtension = false)
     {
-        return $this->originalFilename;
+        if ($withoutExtension === static::WITHOUT_EXTENSION) {
+            return $this->removeExtension($this->originalFilename);
+        } else {
+            return $this->originalFilename;
+        }
     }
 
     /**
@@ -97,6 +128,16 @@ class Resumable
     public function getFilepath()
     {
         return $this->filepath;
+    }
+
+    /**
+     * Get final extension.
+     *
+     * @return string Final extension name
+     */
+    public function getExtension()
+    {
+        return $this->extension;
     }
 
     /**
@@ -142,6 +183,7 @@ class Resumable
         }
 
         if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
+            $this->isUploadComplete = true;
             $this->createFileAndDeleteTmp($identifier, $filename);
         }
 
@@ -150,23 +192,22 @@ class Resumable
 
     /**
      * Create the final file from chunks
-     *
      */
     private function createFileAndDeleteTmp($identifier, $filename)
     {
         $tmpFolder = new Folder($this->tmpChunkDir($identifier));
         $chunkFiles = $tmpFolder->read(true, true, true)[1];
 
-        // save original filename
-        $this->originalFilename = $filename;
-        
-        // if the user has set a filename (or decided to slugify it), change the final filename
+        // if the user has set a custom filename
         if (null !== $this->filename) {
-            $this->filename = $this->createSafeFilename($this->filename, $filename);
+            $finalFilename = $this->createSafeFilename($this->filename, $filename);
+        } else {
+            $finalFilename = $filename;
         }
 
         // replace filename reference by the final file
-        $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR . $this->filename;
+        $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR . $finalFilename;
+        $this->extension = $this->findExtension($this->filepath);
 
         if ($this->createFileFromChunks($chunkFiles, $this->filepath) && $this->deleteTmpFolder) {
             $tmpFolder->delete();

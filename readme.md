@@ -29,17 +29,23 @@ $resumable->process();
 
 ```
 
-## Options ##
-### Setting custom filename ###
+## More ##
+### Setting custom filename(s) ###
 
 ```
-// custom filename (extension from original file will be kept)
-// @todo Add resumable->getExtension() method
-$resumable->setFilename('myfile');
+// custom filename (extension from original file will be magically removed and re-appended)
+$originalName = $resumable->getOriginalFilename(Resumable::WITHOUT_EXTENSION); // will gove you "original Name" instead of "original Name.png"
+// do some slugification or whatever you need...
+$slugifiedname = my_slugify($originalName); // this is up to you, it as ported out of the library.
+$resumable->setFilename($slugifiedname);
 
-// automatically slugified filename
-// @todo Not yet working, better use as 3d party library https://github.com/cocur/slugify
-$resumable->setFilename(RESUMABLE::SLUGIFY);
+$resumable->process();
+
+// you can also get file information after the upload is complete
+if (true === $resumable->isUploadComplete()) { // true when the final file has been uploaded and chunks reunited.
+    $extension = $resumable->getExtension();
+    $filename = $resumable->getFilename();
+}
 ```
 
 ## Testing
