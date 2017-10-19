@@ -162,7 +162,7 @@ class Resumable
         $chunkNumber = $this->resumableParam('chunkNumber');
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
-            return $this->response->header(404);
+            return $this->response->header(204);
         } else {
             return $this->response->header(200);
         }
@@ -265,7 +265,7 @@ class Resumable
 
     public function tmpChunkFilename($filename, $chunkNumber)
     {
-        return $filename . '.part' . $chunkNumber;
+        return $filename . '.' . str_pad($chunkNumber, 4, 0, STR_PAD_LEFT);
     }
 
     public function createFileFromChunks($chunkFiles, $destFile)
