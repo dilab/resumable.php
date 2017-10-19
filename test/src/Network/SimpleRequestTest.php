@@ -76,7 +76,7 @@ class SimpleRequestTest extends \PHPUnit_Framework_TestCase
        $file = array(
            'name'=> 'mock.png',
            'type'=> 'application/octet-stream',
-           'tmp_name'=>  'test/files/mock.png.part3',
+           'tmp_name'=>  'test/files/mock.png.0003',
            'error'=> 0,
            'size'=> 1048576,
        );
