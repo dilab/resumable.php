@@ -268,13 +268,26 @@ class Resumable
         return $filename . '.' . str_pad($chunkNumber, 4, 0, STR_PAD_LEFT);
     }
 
+    public function getExclusiveFileHandle($name) {
+        // if the file exists, fopen() will raise a warning
+        $previous_error_level = error_reporting();
+        error_reporting(E_ERROR);
+        $handle = fopen($name, 'x');
+        error_reporting($previous_error_level);
+        return $handle;
+    }
+
     public function createFileFromChunks($chunkFiles, $destFile)
     {
         $this->log('Beginning of create files from chunks');
 
         natsort($chunkFiles);
 
-        $destFile = new File($destFile, true);
+        $handle = $this->getExclusiveFileHandle9$destFile);
+        if (!$handle) return false;
+
+        $destFile = new File($destFile);
+        $destFile->handle = $handle;
         foreach ($chunkFiles as $chunkFile) {
             $file = new File($chunkFile);
             $destFile->append($file->read());
