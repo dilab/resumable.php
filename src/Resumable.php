@@ -284,7 +284,7 @@ class Resumable
 
         natsort($chunkFiles);
 
-        $handle = $this->getExclusiveFileHandle9$destFile);
+        $handle = $this->getExclusiveFileHandle($destFile);
         if (!$handle) {
             return false;
         }
