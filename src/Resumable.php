@@ -1,4 +1,5 @@
 <?php
+
 namespace Dilab;
 
 use Cake\Filesystem\File;
@@ -39,6 +40,14 @@ class Resumable
 
     protected $isUploadComplete = false;
 
+    protected $resumableOption = [
+        'identifier' => 'identifier',
+        'filename' => 'filename',
+        'chunkNumber' => 'chunkNumber',
+        'chunkSize' => 'chunkSize',
+        'totalSize' => 'totalSize'
+    ];
+
     const WITHOUT_EXTENSION = true;
 
     public function __construct(Request $request, Response $response)
@@ -50,6 +59,11 @@ class Resumable
         $this->log->pushHandler(new StreamHandler('debug.log', Logger::DEBUG));
 
         $this->preProcess();
+    }
+
+    public function setResumableOption(array $resumableOption)
+    {
+        $this->resumableOption = array_merge($this->resumableOption, $resumableOption);
     }
 
     // sets original filename and extenstion, blah blah
@@ -115,9 +129,9 @@ class Resumable
     {
         if ($withoutExtension === static::WITHOUT_EXTENSION) {
             return $this->removeExtension($this->originalFilename);
-        } else {
-            return $this->originalFilename;
         }
+
+        return $this->originalFilename;
     }
 
     /**
@@ -157,25 +171,25 @@ class Resumable
 
     public function handleTestChunk()
     {
-        $identifier = $this->resumableParam('identifier');
-        $filename = $this->resumableParam('filename');
-        $chunkNumber = $this->resumableParam('chunkNumber');
+        $identifier = $this->resumableParam($this->resumableOption['identifier']);
+        $filename = $this->resumableParam($this->resumableOption['filename']);
+        $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             return $this->response->header(404);
-        } else {
-            return $this->response->header(200);
         }
+
+        return $this->response->header(200);
     }
 
     public function handleChunk()
     {
         $file = $this->request->file();
-        $identifier = $this->resumableParam('identifier');
-        $filename = $this->resumableParam('filename');
-        $chunkNumber = $this->resumableParam('chunkNumber');
-        $chunkSize = $this->resumableParam('chunkSize');
-        $totalSize = $this->resumableParam('totalSize');
+        $identifier = $this->resumableParam($this->resumableOption['identifier']);
+        $filename = $this->resumableParam($this->resumableOption['filename']);
+        $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
+        $chunkSize = $this->resumableParam($this->resumableOption['chunkSize']);
+        $totalSize = $this->resumableParam($this->resumableOption['totalSize']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             $chunkFile = $this->tmpChunkDir($identifier) . DIRECTORY_SEPARATOR . $this->tmpChunkFilename($filename, $chunkNumber);

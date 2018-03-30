@@ -1,4 +1,4 @@
-# PHP backend for resumable.js
+# PHP backend for resumable file upload
 
 
 ## Installation
