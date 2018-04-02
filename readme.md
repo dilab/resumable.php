@@ -1,4 +1,4 @@
-# PHP backend for chucked file upload
+# PHP backend for resumable.js
 
 
 ## Installation
