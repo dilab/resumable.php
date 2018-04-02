@@ -1,4 +1,4 @@
-# PHP backend for resumable file upload
+# PHP backend for chucked file upload
 
 
 ## Installation
@@ -35,10 +35,12 @@ $resumable->process();
 ```
 // custom filename (extension from original file will be magically removed and re-appended)
 $originalName = $resumable->getOriginalFilename(Resumable::WITHOUT_EXTENSION); // will gove you "original Name" instead of "original Name.png"
+
 // do some slugification or whatever you need...
 $slugifiedname = my_slugify($originalName); // this is up to you, it as ported out of the library.
 $resumable->setFilename($slugifiedname);
 
+// process upload as normal
 $resumable->process();
 
 // you can also get file information after the upload is complete
