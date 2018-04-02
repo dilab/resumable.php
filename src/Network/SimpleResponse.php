@@ -16,7 +16,7 @@ class SimpleResponse implements Response
         } else if (404==$statusCode) {
             return header("HTTP/1.0 404 Not Found");
         }
-        return header("HTTP/1.0 404 Not Found");
+        return header("HTTP/1.0 204 No Content");
     }
 
 }

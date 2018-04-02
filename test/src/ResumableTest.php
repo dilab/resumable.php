@@ -50,7 +50,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
         $this->request->method('file')
                     ->will($this->returnValue(array(
                             'name'=> 'mock.png',
-                            'tmp_name'=>  'test/files/mock.png.part3',
+                            'tmp_name'=>  'test/files/mock.png.003',
                             'error'=> 0,
                             'size'=> 27000,
                         )));
@@ -142,7 +142,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
         $this->request->method('file')
                 ->willReturn(array(
                     'name'=> 'mock.png',
-                    'tmp_name'=>  'test/files/mock.png.part3',
+                    'tmp_name'=>  'test/files/mock.png.003',
                     'error'=> 0,
                     'size'=> 27000,
                 ));
@@ -154,7 +154,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
         $this->resumbable->handleChunk();
 
         $this->assertFileExists('test/uploads/mock.png');
-        unlink('test/tmp/identifier/mock.png.part3');
+        file_exists('test/tmp/identifier/mock.png.003') && unlink('test/tmp/identifier/mock.png.003');
         unlink('test/uploads/mock.png');
     }
 
@@ -226,22 +226,22 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
     {
         $this->resumbable = new Resumable($this->request,$this->response);
         $filename = 'mock-file.png';
-        $chunkNumber = 1;
-        $expected = $filename.'.part'.$chunkNumber;
+        $chunkNumber = str_pad(1, 4, 0, STR_PAD_LEFT);
+        $expected = $filename.'.'.$chunkNumber;
         $this->assertEquals($expected, $this->resumbable->tmpChunkFilename($filename,$chunkNumber));
     }
 
     public function testCreateFileFromChunks()
     {
         $files = array(
-            'test/files/mock.png.part1',
-            'test/files/mock.png.part2',
-            'test/files/mock.png.part3',
+            'test/files/mock.png.0001',
+            'test/files/mock.png.0002',
+            'test/files/mock.png.0003',
         );
         $totalFileSize = array_sum(array(
-            filesize('test/files/mock.png.part1'),
-            filesize('test/files/mock.png.part2'),
-            filesize('test/files/mock.png.part3')
+            filesize('test/files/mock.png.0001'),
+            filesize('test/files/mock.png.0002'),
+            filesize('test/files/mock.png.0003')
         ));
         $destFile = 'test/files/5.png';
 
@@ -256,7 +256,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
     {
         $destFile = 'test/files/4.png';
         $this->resumbable = new Resumable($this->request,$this->response);
-        $this->resumbable->moveUploadedFile('test/files/mock.png.part1', $destFile);
+        $this->resumbable->moveUploadedFile('test/files/mock.png.0001', $destFile);
         $this->assertFileExists($destFile);
         unlink($destFile);
     }

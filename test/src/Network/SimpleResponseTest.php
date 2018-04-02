@@ -26,8 +26,9 @@ class SimpleResponseTest extends \PHPUnit_Framework_TestCase
     {
         return array(
             array(404,404),
+            array(204,204),
             array(200,200),
-            array(500,404),
+            array(500,204),
         );
     }
 

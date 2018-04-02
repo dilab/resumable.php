@@ -176,10 +176,11 @@ class Resumable
         $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
-            return $this->response->header(404);
+            return $this->response->header(204);
+        } else {
+            return $this->response->header(200);
         }
 
-        return $this->response->header(200);
     }
 
     public function handleChunk()
@@ -279,7 +280,17 @@ class Resumable
 
     public function tmpChunkFilename($filename, $chunkNumber)
     {
-        return $filename . '.part' . $chunkNumber;
+        return $filename . '.' . str_pad($chunkNumber, 4, 0, STR_PAD_LEFT);
+    }
+
+    public function getExclusiveFileHandle($name)
+    {
+        // if the file exists, fopen() will raise a warning
+        $previous_error_level = error_reporting();
+        error_reporting(E_ERROR);
+        $handle = fopen($name, 'x');
+        error_reporting($previous_error_level);
+        return $handle;
     }
 
     public function createFileFromChunks($chunkFiles, $destFile)
@@ -288,7 +299,13 @@ class Resumable
 
         natsort($chunkFiles);
 
-        $destFile = new File($destFile, true);
+        $handle = $this->getExclusiveFileHandle($destFile);
+        if (!$handle) {
+            return false;
+        }
+
+        $destFile = new File($destFile);
+        $destFile->handle = $handle;
         foreach ($chunkFiles as $chunkFile) {
             $file = new File($chunkFile);
             $destFile->append($file->read());
@@ -342,3 +359,4 @@ class Resumable
         return str_replace(sprintf('.%s', $ext), '', $filename);
     }
 }
+
