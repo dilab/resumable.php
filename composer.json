@@ -1,5 +1,5 @@
 {
-  "name": "abilogos/resumable.php",
+  "name": "dilab/resumable.php",
   "description": "PHP package for Resumable.js for yii framework forked from dilab/resumable.php",
   "authors": [
     {
