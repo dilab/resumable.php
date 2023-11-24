@@ -81,9 +81,9 @@ class Resumable
     {
         if (!empty($this->resumableParams())) {
             if (!empty($this->request->file())) {
-                $this->handleChunk();
+                return $this->handleChunk();
             } else {
-                $this->handleTestChunk();
+                return $this->handleTestChunk();
             }
         }
     }
@@ -200,6 +200,7 @@ class Resumable
         if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
             $this->isUploadComplete = true;
             $this->createFileAndDeleteTmp($identifier, $filename);
+            return $this->response->header(201);
         }
 
         return $this->response->header(200);

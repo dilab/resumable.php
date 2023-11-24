@@ -1,11 +1,16 @@
 # PHP backend for resumable.js
 
+This is a fork from [dilab/resumable.php](https://github.com/dilab/resumable.php)
+
+inspired by [black-bits/resumable.js-laravel-backend](https://github.com/black-bits/resumable.js-laravel-backend)
+
+reworked for integerating with Yii 2.0 framework
 
 ## Installation
 
 To install, use composer:
 
-``` composer require dilab/resumable.php ```
+``` composer require abilogos/resumable.php ```
 
 
 ## How to use
@@ -25,7 +30,19 @@ $response = new SimpleResponse();
 $resumable = new Resumable($request, $response);
 $resumable->tempFolder = 'tmps';
 $resumable->uploadFolder = 'uploads';
-$resumable->process();
+$status = $resumable->process();
+
+$response->statusCode = in_array($status, [200,201,204]) ? $status : 404;
+
+return match ($status){
+            200 => ['message' => 'OK'], // Uploading of chunk is complete.
+            201 => [
+                'message' => 'File uploaded',
+                'file' => $params['resumableFilename']
+            ],// Uploading of whole file is complete.
+            204 => ['message' => 'Chunk not found'],//TODO: will work in resumable:0.1.4 after update monolog
+            default => ['message' => 'An error occurred'] //status => 404
+        };
 
 ```
 

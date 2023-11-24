@@ -12,11 +12,20 @@ class SimpleResponse implements Response
     public function header($statusCode)
     {
         if (200==$statusCode) {
-            return header($_SERVER["SERVER_PROTOCOL"]." 200 Ok");
+            header($_SERVER["SERVER_PROTOCOL"]." 200 Ok");
+            return 200;
+        } else if (201==$statusCode) {
+            header($_SERVER["SERVER_PROTOCOL"]." 201 Accepted");
+            return 201; // upload complete
+        } else if (204==$statusCode) {
+            header($_SERVER["SERVER_PROTOCOL"]." 204 No Content");
+            return 204; // chunk not found
         } else if (404==$statusCode) {
-            return header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
+            header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
+            return 404;
         }
-        return header($_SERVER["SERVER_PROTOCOL"]." 204 No Content");
+        header($_SERVER["SERVER_PROTOCOL"]." 404 No Content");
+        return 404;
     }
 
 }
