@@ -1,14 +1,10 @@
 {
   "name": "dilab/resumable.php",
-  "description": "PHP package for Resumable.js for yii framework forked from dilab/resumable.php",
+  "description": "PHP package for Resumable.js",
   "authors": [
     {
       "name": "xu ding",
       "email": "thedilab@gmail.com"
-    },
-    {
-      "name": "Ali Hakami",
-      "email": "dev.abi.log@gmail.com"
     }
   ],
   "require": {
