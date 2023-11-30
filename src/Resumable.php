@@ -24,6 +24,8 @@ class Resumable
 
     protected $response;
 
+    protected $instanceId;
+
     protected $params;
 
     protected $chunkFile;
@@ -50,10 +52,11 @@ class Resumable
 
     const WITHOUT_EXTENSION = true;
 
-    public function __construct(Request $request, Response $response)
+    public function __construct(Request $request, Response $response, string|null $instanceId = null)
     {
         $this->request = $request;
         $this->response = $response;
+        $this->instanceId = $instanceId;
 
         $this->log = new Logger('debug');
         $this->log->pushHandler(new StreamHandler('debug.log', Logger::DEBUG));
@@ -222,7 +225,12 @@ class Resumable
         }
 
         // replace filename reference by the final file
-        $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR . $finalFilename;
+        $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR;
+        if (!empty($this->instanceId)) {
+            $this->filepath .= $this->instanceId . DIRECTORY_SEPARATOR;
+        }
+        $this->filepath .= $finalFilename;
+
         $this->extension = $this->findExtension($this->filepath);
 
         if ($this->createFileFromChunks($chunkFiles, $this->filepath) && $this->deleteTmpFolder) {
@@ -272,9 +280,14 @@ class Resumable
 
     public function tmpChunkDir($identifier)
     {
-        $tmpChunkDir = $this->tempFolder . DIRECTORY_SEPARATOR . $identifier;
+        $tmpChunkDir = $this->tempFolder. DIRECTORY_SEPARATOR;
+        if (!empty($this->instanceId)){
+            $tmpChunkDir .= $this->instanceId . DIRECTORY_SEPARATOR;
+        }
+        $tmpChunkDir .= $identifier;
         if (!file_exists($tmpChunkDir)) {
-            mkdir($tmpChunkDir);
+            umask(0);
+            mkdir($tmpChunkDir, 0775, true);
         }
         return $tmpChunkDir;
     }
@@ -299,6 +312,11 @@ class Resumable
         $this->log('Beginning of create files from chunks');
 
         natsort($chunkFiles);
+
+        if (!empty($this->instanceId) && !file_exists(dirname($destFile)) ) {
+            umask(0);
+            mkdir(dirname($destFile), 0775, true);
+        }
 
         $handle = $this->getExclusiveFileHandle($destFile);
         if (!$handle) {
