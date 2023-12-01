@@ -177,10 +177,17 @@ class Resumable
         $identifier = $this->resumableParam($this->resumableOption['identifier']);
         $filename = $this->resumableParam($this->resumableOption['filename']);
         $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
+        $chunkSize = $this->resumableParam($this->resumableOption['chunkSize']);
+        $totalSize = $this->resumableParam($this->resumableOption['totalSize']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             return $this->response->header(204);
         } else {
+            if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
+                $this->isUploadComplete = true;
+                $this->createFileAndDeleteTmp($identifier, $filename);
+                return $this->response->header(201);
+            }
             return $this->response->header(200);
         }
 
