@@ -25,5 +25,10 @@
     "psr-4": {
       "Dilab\\Test\\": "test/src/"
     }
+  },
+  "config": {
+    "allow-plugins": {
+        "dealerdirect/phpcodesniffer-composer-installer": true
+    }
   }
 }
