@@ -364,6 +364,9 @@ class Resumable
 
     public function moveUploadedFile($file, $destFile)
     {
+        //workaround cakephp error regarding: TMP not defined 
+        define("TMP",sys_get_temp_dir());
+
         $file = new File($file);
         if ($file->exists()) {
             return $file->copy($destFile);
