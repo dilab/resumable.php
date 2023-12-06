@@ -292,11 +292,31 @@ class Resumable
             $tmpChunkDir .= $this->instanceId . DIRECTORY_SEPARATOR;
         }
         $tmpChunkDir .= $identifier;
-        if (!file_exists($tmpChunkDir)) {
-            umask(0);
-            mkdir($tmpChunkDir, 0775, true);
-        }
+        $this->ensureDirExists($tmpChunkDir);
         return $tmpChunkDir;
+    }
+
+    /**
+     * make directory if it doesn't exists (Immune against the race condition)
+     * 
+     * 
+     * since the resuamble is usually used with simultaneously uploads,
+     * this sometimes resulted in directory creation btween the *is_dir* check
+     * and *mkdir* then following race condition.
+     * in this setup it will shut down the mkdir error
+     * then try to check if directory is created after that
+     * 
+     * @param string $path the directoryPath to ensure
+     * @return void
+     * @throws \Exception
+     */
+    private function ensureDirExists($path)
+    {
+        umask(0);
+        if ( is_dir($path) || @mkdir($path, 0775, true) || is_dir($path)) {
+            return;
+        }
+        throw new \Exception("could not mkdir $path");
     }
 
     public function tmpChunkFilename($filename, $chunkNumber)
@@ -320,9 +340,8 @@ class Resumable
 
         natsort($chunkFiles);
 
-        if (!empty($this->instanceId) && !file_exists(dirname($destFile)) ) {
-            umask(0);
-            mkdir(dirname($destFile), 0775, true);
+        if (!empty($this->instanceId)) {
+            $this->ensureDirExists(dirname($destFile));
         }
 
         $handle = $this->getExclusiveFileHandle($destFile);
