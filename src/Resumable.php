@@ -47,7 +47,8 @@ class Resumable
         'filename' => 'filename',
         'chunkNumber' => 'chunkNumber',
         'chunkSize' => 'chunkSize',
-        'totalSize' => 'totalSize'
+        'totalSize' => 'totalSize',
+        'totalChunks' => 'totalChunks'
     ];
 
     const WITHOUT_EXTENSION = true;
@@ -178,12 +179,12 @@ class Resumable
         $filename = $this->resumableParam($this->resumableOption['filename']);
         $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
         $chunkSize = $this->resumableParam($this->resumableOption['chunkSize']);
-        $totalSize = $this->resumableParam($this->resumableOption['totalSize']);
+        $totalChunks = $this->resumableParam($this->resumableOption['totalChunks']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             return $this->response->header(204);
         } else {
-            if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
+            if ($this->isFileUploadComplete($filename, $identifier, $totalChunks)) {
                 $this->isUploadComplete = true;
                 $this->createFileAndDeleteTmp($identifier, $filename);
                 return $this->response->header(201);
@@ -200,14 +201,14 @@ class Resumable
         $filename = $this->resumableParam($this->resumableOption['filename']);
         $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
         $chunkSize = $this->resumableParam($this->resumableOption['chunkSize']);
-        $totalSize = $this->resumableParam($this->resumableOption['totalSize']);
+        $totalChunks = $this->resumableParam($this->resumableOption['totalChunks']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             $chunkFile = $this->tmpChunkDir($identifier) . DIRECTORY_SEPARATOR . $this->tmpChunkFilename($filename, $chunkNumber);
             $this->moveUploadedFile($file['tmp_name'], $chunkFile);
         }
 
-        if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
+        if ($this->isFileUploadComplete($filename, $identifier, $totalChunks)) {
             $this->isUploadComplete = true;
             $this->createFileAndDeleteTmp($identifier, $filename);
             return $this->response->header(201);
@@ -265,13 +266,9 @@ class Resumable
         }
     }
 
-    public function isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)
+    public function isFileUploadComplete($filename, $identifier, $totalChunks)
     {
-        if ($chunkSize <= 0) {
-            return false;
-        }
-        $numOfChunks = intval($totalSize / $chunkSize) + ($totalSize % $chunkSize == 0 ? 0 : 1);
-        for ($i = 1; $i <= $numOfChunks; $i++) {
+        for ($i = 1; $i <= $totalChunks; $i++) {
             if (!$this->isChunkUploaded($identifier, $filename, $i)) {
                 return false;
             }
