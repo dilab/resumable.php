@@ -271,7 +271,7 @@ class Resumable
             return false;
         }
         $numOfChunks = intval($totalSize / $chunkSize) + ($totalSize % $chunkSize == 0 ? 0 : 1);
-        for ($i = 1; $i < $numOfChunks; $i++) {
+        for ($i = 1; $i <= $numOfChunks; $i++) {
             if (!$this->isChunkUploaded($identifier, $filename, $i)) {
                 return false;
             }
