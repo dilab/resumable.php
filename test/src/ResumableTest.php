@@ -12,13 +12,13 @@ use Cake\Filesystem\File;
  * @property $request Request
  * @property $response Response
  */
-class ResumbableTest extends \PHPUnit_Framework_TestCase
+class ResumableTest extends \PHPUnit\Framework\TestCase
 {
     public $resumbable;
 
     protected $provider;
 
-    protected function setUp()
+    protected function setUp() : void
     {
         $this->request = $this->getMockBuilder('Dilab\Network\SimpleRequest')
                         ->getMock();
@@ -27,7 +27,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
                         ->getMock();
     }
 
-    public function tearDown()
+    public function tearDown() : void
     {
         unset($this->request);
         unset($this->response);
@@ -45,21 +45,21 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
             'resumableRelativePath'=> 'upload',
         );
 
-        $this->request->method('is')->will($this->returnValue(true));
+        $this->request->method('is')->willReturn(true);
 
         $this->request->method('file')
-                    ->will($this->returnValue(array(
+                    ->willReturn([
                             'name'=> 'mock.png',
-                            'tmp_name'=>  'test/files/mock.png.003',
+                            'tmp_name'=>  'test/files/mock.png.0003',
                             'error'=> 0,
                             'size'=> 27000,
-                        )));
+                        ]);
 
         $this->request->method('data')->willReturn($resumableParams);
 
         $this->resumbable = $this->getMockBuilder('Dilab\Resumable')
                                 ->setConstructorArgs(array($this->request,$this->response))
-                                ->setMethods(array('handleChunk'))
+                                ->onlyMethods(array('handleChunk'))
                                 ->getMock();
 
         $this->resumbable->expects($this->once())
@@ -80,15 +80,15 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
             'resumableRelativePath'=> 'upload',
         );
 
-        $this->request->method('is')->will($this->returnValue(true));
+        $this->request->method('is')->willReturn(true);
 
-        $this->request->method('file')->will($this->returnValue(array()));
+        $this->request->method('file')->willReturn([]);
 
         $this->request->method('data')->willReturn($resumableParams);
 
         $this->resumbable = $this->getMockBuilder('Dilab\Resumable')
                                 ->setConstructorArgs(array($this->request,$this->response))
-                                ->setMethods(array('handleTestChunk'))
+                                ->onlyMethods(array('handleTestChunk'))
                                 ->getMock();
 
         $this->resumbable->expects($this->once())
@@ -101,12 +101,12 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
     public function testHandleTestChunk()
     {
         $this->request->method('is')
-                      ->will($this->returnValue(true));
+                      ->willReturn(true);
 
         $this->request->method('data')
                       ->willReturn(array(
                            'resumableChunkNumber'=> 1,
-                           'resumableTotalChunks'=> 600,
+                           'resumableTotalSize'=> 600,
                            'resumableChunkSize'=>  200,
                            'resumableIdentifier'=> 'identifier',
                            'resumableFilename'=> 'mock.png',
@@ -125,7 +125,8 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
     public function testHandleChunk() {
         $resumableParams = array(
             'resumableChunkNumber'=> 3,
-            'resumableTotalChunks'=> 600,
+            // 'resumableTotalChunks'=> 600,
+            'resumableTotalSize'=> 600,
             'resumableChunkSize'=>  200,
             'resumableIdentifier'=> 'identifier',
             'resumableFilename'=> 'mock.png',
@@ -134,7 +135,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
 
 
         $this->request->method('is')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->request->method('data')
                 ->willReturn($resumableParams);
@@ -142,7 +143,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
         $this->request->method('file')
                 ->willReturn(array(
                     'name'=> 'mock.png',
-                    'tmp_name'=>  'test/files/mock.png.003',
+                    'tmp_name'=>  'test/files/mock.png.0003',
                     'error'=> 0,
                     'size'=> 27000,
                 ));
@@ -154,7 +155,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
         $this->resumbable->handleChunk();
 
         $this->assertFileExists('test/uploads/mock.png');
-        file_exists('test/tmp/identifier/mock.png.003') && unlink('test/tmp/identifier/mock.png.003');
+        file_exists('test/tmp/identifier/mock.png.0003') && unlink('test/tmp/identifier/mock.png.0003');
         unlink('test/uploads/mock.png');
     }
 
@@ -173,7 +174,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
             ->getMock();
 
         $this->request->method('is')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
 
         $this->request->method('data')->willReturn($resumableParams);
 
@@ -181,7 +182,7 @@ class ResumbableTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($resumableParams, $this->resumbable->resumableParams());
     }
 
-    public function isFileUploadCompleteProvider()
+    public static function isFileUploadCompleteProvider()
     {
         return array(
             array('mock.png', 'files', 20, 60, true),

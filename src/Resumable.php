@@ -24,6 +24,8 @@ class Resumable
 
     protected $response;
 
+    protected $instanceId;
+
     protected $params;
 
     protected $chunkFile;
@@ -45,15 +47,17 @@ class Resumable
         'filename' => 'filename',
         'chunkNumber' => 'chunkNumber',
         'chunkSize' => 'chunkSize',
-        'totalSize' => 'totalSize'
+        'totalSize' => 'totalSize',
+        'totalChunks' => 'totalChunks'
     ];
 
     const WITHOUT_EXTENSION = true;
 
-    public function __construct(Request $request, Response $response)
+    public function __construct(Request $request, Response $response, string|null $instanceId = null)
     {
         $this->request = $request;
         $this->response = $response;
+        $this->instanceId = $instanceId;
 
         $this->log = new Logger('debug');
         $this->log->pushHandler(new StreamHandler('debug.log', Logger::DEBUG));
@@ -81,9 +85,9 @@ class Resumable
     {
         if (!empty($this->resumableParams())) {
             if (!empty($this->request->file())) {
-                $this->handleChunk();
+                return $this->handleChunk();
             } else {
-                $this->handleTestChunk();
+                return $this->handleTestChunk();
             }
         }
     }
@@ -174,10 +178,17 @@ class Resumable
         $identifier = $this->resumableParam($this->resumableOption['identifier']);
         $filename = $this->resumableParam($this->resumableOption['filename']);
         $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
+        $chunkSize = $this->resumableParam($this->resumableOption['chunkSize']);
+        $totalChunks = $this->resumableParam($this->resumableOption['totalChunks']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             return $this->response->header(204);
         } else {
+            if ($this->isFileUploadComplete($filename, $identifier, $totalChunks)) {
+                $this->isUploadComplete = true;
+                $this->createFileAndDeleteTmp($identifier, $filename);
+                return $this->response->header(201);
+            }
             return $this->response->header(200);
         }
 
@@ -190,16 +201,17 @@ class Resumable
         $filename = $this->resumableParam($this->resumableOption['filename']);
         $chunkNumber = $this->resumableParam($this->resumableOption['chunkNumber']);
         $chunkSize = $this->resumableParam($this->resumableOption['chunkSize']);
-        $totalSize = $this->resumableParam($this->resumableOption['totalSize']);
+        $totalChunks = $this->resumableParam($this->resumableOption['totalChunks']);
 
         if (!$this->isChunkUploaded($identifier, $filename, $chunkNumber)) {
             $chunkFile = $this->tmpChunkDir($identifier) . DIRECTORY_SEPARATOR . $this->tmpChunkFilename($filename, $chunkNumber);
             $this->moveUploadedFile($file['tmp_name'], $chunkFile);
         }
 
-        if ($this->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)) {
+        if ($this->isFileUploadComplete($filename, $identifier, $totalChunks)) {
             $this->isUploadComplete = true;
             $this->createFileAndDeleteTmp($identifier, $filename);
+            return $this->response->header(201);
         }
 
         return $this->response->header(200);
@@ -221,7 +233,12 @@ class Resumable
         }
 
         // replace filename reference by the final file
-        $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR . $finalFilename;
+        $this->filepath = $this->uploadFolder . DIRECTORY_SEPARATOR;
+        if (!empty($this->instanceId)) {
+            $this->filepath .= $this->instanceId . DIRECTORY_SEPARATOR;
+        }
+        $this->filepath .= $finalFilename;
+
         $this->extension = $this->findExtension($this->filepath);
 
         if ($this->createFileFromChunks($chunkFiles, $this->filepath) && $this->deleteTmpFolder) {
@@ -249,13 +266,9 @@ class Resumable
         }
     }
 
-    public function isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize)
+    public function isFileUploadComplete($filename, $identifier, $totalChunks)
     {
-        if ($chunkSize <= 0) {
-            return false;
-        }
-        $numOfChunks = intval($totalSize / $chunkSize) + ($totalSize % $chunkSize == 0 ? 0 : 1);
-        for ($i = 1; $i < $numOfChunks; $i++) {
+        for ($i = 1; $i <= $totalChunks; $i++) {
             if (!$this->isChunkUploaded($identifier, $filename, $i)) {
                 return false;
             }
@@ -271,11 +284,36 @@ class Resumable
 
     public function tmpChunkDir($identifier)
     {
-        $tmpChunkDir = $this->tempFolder . DIRECTORY_SEPARATOR . $identifier;
-        if (!file_exists($tmpChunkDir)) {
-            mkdir($tmpChunkDir);
+        $tmpChunkDir = $this->tempFolder. DIRECTORY_SEPARATOR;
+        if (!empty($this->instanceId)){
+            $tmpChunkDir .= $this->instanceId . DIRECTORY_SEPARATOR;
         }
+        $tmpChunkDir .= $identifier;
+        $this->ensureDirExists($tmpChunkDir);
         return $tmpChunkDir;
+    }
+
+    /**
+     * make directory if it doesn't exists (Immune against the race condition)
+     * 
+     * 
+     * since the resuamble is usually used with simultaneously uploads,
+     * this sometimes resulted in directory creation btween the *is_dir* check
+     * and *mkdir* then following race condition.
+     * in this setup it will shut down the mkdir error
+     * then try to check if directory is created after that
+     * 
+     * @param string $path the directoryPath to ensure
+     * @return void
+     * @throws \Exception
+     */
+    private function ensureDirExists($path)
+    {
+        umask(0);
+        if ( is_dir($path) || @mkdir($path, 0775, true) || is_dir($path)) {
+            return;
+        }
+        throw new \Exception("could not mkdir $path");
     }
 
     public function tmpChunkFilename($filename, $chunkNumber)
@@ -299,6 +337,10 @@ class Resumable
 
         natsort($chunkFiles);
 
+        if (!empty($this->instanceId)) {
+            $this->ensureDirExists(dirname($destFile));
+        }
+
         $handle = $this->getExclusiveFileHandle($destFile);
         if (!$handle) {
             return false;
@@ -319,6 +361,9 @@ class Resumable
 
     public function moveUploadedFile($file, $destFile)
     {
+        //workaround cakephp error regarding: TMP not defined 
+        define("TMP",sys_get_temp_dir());
+
         $file = new File($file);
         if ($file->exists()) {
             return $file->copy($destFile);

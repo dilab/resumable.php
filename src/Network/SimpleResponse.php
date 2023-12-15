@@ -11,12 +11,14 @@ class SimpleResponse implements Response
      */
     public function header($statusCode)
     {
-        if (200==$statusCode) {
-            return header($_SERVER["SERVER_PROTOCOL"]." 200 Ok");
-        } else if (404==$statusCode) {
-            return header($_SERVER["SERVER_PROTOCOL"]." 404 Not Found");
+        if($statusCode >= 500) {
+            $statusCode = 204;
         }
-        return header($_SERVER["SERVER_PROTOCOL"]." 204 No Content");
+        if (!in_array($statusCode, [200,201,204,404])) {
+            $statusCode = 404;
+        }
+        http_response_code($statusCode);
+        return $statusCode;
     }
 
 }

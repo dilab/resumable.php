@@ -8,14 +8,14 @@ use Dilab\Network\Request;
  * @package Dilab\Network
  * @property $request Request
  */
-class SimpleRequestTest extends \PHPUnit_Framework_TestCase
+class SimpleRequestTest extends \PHPUnit\Framework\TestCase
 {
-    protected function setUp()
+    protected function setUp() : void
     {
         $this->request = new SimpleRequest();
     }
 
-    public function tearDown()
+    public function tearDown() : void
     {
         unset($this->request);
         parent::tearDown();

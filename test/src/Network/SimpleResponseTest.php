@@ -8,28 +8,28 @@ use Dilab\Network\Response;
  * @package Dilab\Network
  * @property $response Response
  */
-class SimpleResponseTest extends \PHPUnit_Framework_TestCase
+class SimpleResponseTest extends \PHPUnit\Framework\TestCase
 {
-    protected function setUp()
+    protected function setUp() : void
     {
         $this->response = new SimpleResponse();
     }
 
-    public function tearDown()
+    public function tearDown() : void
     {
         unset($this->response);
         parent::tearDown();
     }
 
 
-    public function headerProvider()
+    public static function headerProvider()
     {
-        return array(
-            array(404,404),
-            array(204,204),
-            array(200,200),
-            array(500,204),
-        );
+        return [
+            [404,404],
+            [204,204],
+            [200,200],
+            [500,204],
+        ];
     }
 
     /**

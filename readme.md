@@ -1,6 +1,5 @@
 # PHP backend for resumable.js
 
-
 ## Installation
 
 To install, use composer:
@@ -21,11 +20,23 @@ use Dilab\Resumable;
 
 $request = new SimpleRequest();
 $response = new SimpleResponse();
+// optional instanceId to seperate uploads from diffrent users like if two users want to upload untitled.jpg there would be no conflict anymore
+$instanceId = session_id();
 
-$resumable = new Resumable($request, $response);
+$resumable = new Resumable($request, $response, $instanceId);
 $resumable->tempFolder = 'tmps';
 $resumable->uploadFolder = 'uploads';
-$resumable->process();
+$status = $resumable->process();
+
+return match ($status){
+            200 => ['message' => 'OK'], // Uploading of chunk is complete.
+            201 => [
+                'message' => 'File uploaded',
+                'file' => $_REQUEST['resumableFilename']
+            ],// Uploading of whole file is complete.
+            204 => ['message' => 'Chunk not found'],
+            default => ['message' => 'An error occurred'] //status => 404
+        };
 
 ```
 
