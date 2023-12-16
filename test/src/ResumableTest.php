@@ -115,7 +115,7 @@ class ResumableTest extends \PHPUnit\Framework\TestCase
 
         $this->response->expects($this->once())
                         ->method('header')
-                        ->with($this->equalTo(200));
+                        ->with($this->equalTo(201));
 
         $this->resumbable = new Resumable($this->request,$this->response);
         $this->resumbable->tempFolder = 'test/tmp';
@@ -184,22 +184,25 @@ class ResumableTest extends \PHPUnit\Framework\TestCase
 
     public static function isFileUploadCompleteProvider()
     {
-        return array(
-            array('mock.png', 'files', 20, 60, true),
-            array('mock.png','files', 25, 60, true),
-            array('mock.png','files', 10, 60, false),
-        );
+        return [
+            ['mock.png', 'files', 1, true],// test/files/0001-0003 exist
+            ['mock.png', 'files', 2, true],// test/files/0001-0003 exist
+            ['mock.png', 'files', 3, true],// test/files/0001-0003 exist
+            ['mock.png', 'files', 4, false],// no 0004 chunk
+            ['mock.png', 'files', 5, false],// no 0004-0005 chunks
+            ['mock.png', 'files', 15, false],// no 0004-00015 chunks
+        ];
     }
 
     /**
      *
      * @dataProvider isFileUploadCompleteProvider
      */
-    public function testIsFileUploadComplete($filename,$identifier, $chunkSize, $totalSize, $expected)
+    public function testIsFileUploadComplete($filename,$identifier, $totalChunks, $expected)
     {
         $this->resumbable = new Resumable($this->request,$this->response);
         $this->resumbable->tempFolder ='test';
-        $this->assertEquals($expected, $this->resumbable->isFileUploadComplete($filename, $identifier, $chunkSize, $totalSize));
+        $this->assertEquals($expected, $this->resumbable->isFileUploadComplete($filename, $identifier, $totalChunks));
     }
 
     public function testIsChunkUploaded()
