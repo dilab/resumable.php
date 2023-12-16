@@ -70,7 +70,7 @@ class Resumable
         $this->resumableOption = array_merge($this->resumableOption, $resumableOption);
     }
 
-    // sets original filename and extenstion, blah blah
+    // sets original filename and extension, blah blah
     public function preProcess()
     {
         if (!empty($this->resumableParams())) {
@@ -243,7 +243,7 @@ class Resumable
 
         if ($this->createFileFromChunks($chunkFiles, $this->filepath) && $this->deleteTmpFolder) {
             $tmpFolder->delete();
-            $this->uploadComplete = true;
+            $this->isUploadComplete = true;
         }
     }
 
@@ -295,14 +295,14 @@ class Resumable
 
     /**
      * make directory if it doesn't exists (Immune against the race condition)
-     * 
-     * 
-     * since the resuamble is usually used with simultaneously uploads,
-     * this sometimes resulted in directory creation btween the *is_dir* check
+     *
+     *
+     * since the resumable is usually used with simultaneously uploads,
+     * this sometimes resulted in directory creation between the *is_dir* check
      * and *mkdir* then following race condition.
      * in this setup it will shut down the mkdir error
      * then try to check if directory is created after that
-     * 
+     *
      * @param string $path the directoryPath to ensure
      * @return void
      * @throws \Exception
@@ -361,7 +361,7 @@ class Resumable
 
     public function moveUploadedFile($file, $destFile)
     {
-        //workaround cakephp error regarding: TMP not defined 
+        //workaround cakephp error regarding: TMP not defined
         define("TMP",sys_get_temp_dir());
 
         $file = new File($file);
