@@ -10,7 +10,7 @@ To install, use composer:
 ## How to use
 **upload.php**
 
-```
+```php
 <?php
 include 'vendor/autoload.php';
 
@@ -20,7 +20,7 @@ use Dilab\Resumable;
 
 $request = new SimpleRequest();
 $response = new SimpleResponse();
-// optional instanceId to seperate uploads from diffrent users like if two users want to upload untitled.jpg there would be no conflict anymore
+// optional instanceId to separate uploads from diffrent users like if two users want to upload untitled.jpg there would be no conflict anymore
 $instanceId = session_id();
 
 $resumable = new Resumable($request, $response, $instanceId);
@@ -43,7 +43,7 @@ return match ($status){
 ## More ##
 ### Setting custom filename(s) ###
 
-```
+```php
 // custom filename (extension from original file will be magically removed and re-appended)
 $originalName = $resumable->getOriginalFilename(Resumable::WITHOUT_EXTENSION); // will gove you "original Name" instead of "original Name.png"
 
@@ -62,6 +62,6 @@ if (true === $resumable->isUploadComplete()) { // true when the final file has b
 ```
 
 ## Testing
-```
+```sh
 $ ./vendor/bin/phpunit
 ```
