@@ -1,0 +1,31 @@
+name: Run phpunit tests
+
+permissions:
+    contents: read
+
+on: [push]
+
+jobs:
+    test-php:
+        name: Test on php ${{ matrix.php-version }} and ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                php-version: ["8.1", "8.2", "8.3"]
+                os: [ubuntu-latest]
+        steps:
+            - uses: actions/checkout@v4
+            - name: Use php ${{ matrix.php-version }}
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php-version }}
+            - name: Cache module
+              uses: actions/cache@v3
+              with:
+                  path: ~/.composer/cache/
+                  key: composer-cache
+            - name: Install dependencies
+              run: composer install --no-interaction
+            - name: Run php tests
+              run: ./vendor/bin/phpunit
