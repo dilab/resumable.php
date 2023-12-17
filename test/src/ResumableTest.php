@@ -232,6 +232,55 @@ class ResumableTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($expected, $this->resumbable->tmpChunkFilename($filename,$chunkNumber));
     }
 
+    public static function fileNameProvider(): array
+    {
+        return [
+            ['example-file.png', 'example-file.png'],
+            ['../unsafe-one-level.txt', 'unsafe-one-level.txt'],
+        ];
+    }
+
+    /**
+     * @dataProvider fileNameProvider
+     */
+    public function testResumableSanitizeFileName(string $filename, string $filenameSanitized): void
+    {
+        $resumableParams = array(
+            'resumableChunkNumber'=> 1,
+            'resumableTotalChunks'=> 1,
+            'resumableChunkSize'=>  200,
+            'resumableIdentifier'=> 'identifier',
+            'resumableFilename'=> $filename,
+            'resumableRelativePath'=> 'upload',
+        );
+
+
+        $this->request->method('is')
+            ->willReturn(true);
+
+        $this->request->method('data')
+                ->willReturn($resumableParams);
+
+        $this->request->method('file')
+                ->willReturn(array(
+                    'name'=> 'mock.png',
+                    'tmp_name'=>  'test/files/mock.png.0003',
+                    'error'=> 0,
+                    'size'=> 27000,
+                ));
+
+        $this->resumbable = new Resumable($this->request, $this->response);
+        $this->resumbable->tempFolder = 'test/tmp';
+        $this->resumbable->uploadFolder = 'test/uploads';
+        $this->resumbable->deleteTmpFolder = false;
+        $this->resumbable->handleChunk();
+
+        $this->assertFileExists('test/uploads/' . $filenameSanitized);
+        $this->assertFileExists('test/tmp/identifier/' . $filenameSanitized . '.0001');
+        $this->assertTrue(unlink('test/tmp/identifier/' . $filenameSanitized . '.0001'));
+        $this->assertTrue(unlink('test/uploads/' . $filenameSanitized));
+    }
+
     public function testCreateFileFromChunks()
     {
         $files = array(
