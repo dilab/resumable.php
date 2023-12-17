@@ -8,6 +8,7 @@ use Dilab\Network\Request;
 use Dilab\Network\Response;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use OndrejVrto\FilenameSanitize\FilenameSanitize;
 
 class Resumable
 {
@@ -159,18 +160,14 @@ class Resumable
     }
 
     /**
-     * Makes sure the orginal extension never gets overriden by user defined filename.
+     * Creates a safe name
      *
-     * @param string User defined filename
-     * @param string Original filename
-     * @return string Filename that always has an extension from the original file
+     * @param string $name Original name
+     * @return string A safer name
      */
-    private function createSafeFilename($filename, $originalFilename)
+    private function createSafeName(string $name): string
     {
-        $filename = $this->removeExtension($filename);
-        $extension = $this->findExtension($originalFilename);
-
-        return sprintf('%s.%s', $filename, $extension);
+        return FilenameSanitize::of($name)->get();
     }
 
     public function handleTestChunk()
@@ -227,9 +224,9 @@ class Resumable
 
         // if the user has set a custom filename
         if (null !== $this->filename) {
-            $finalFilename = $this->createSafeFilename($this->filename, $filename);
+            $finalFilename = $this->createSafeName($this->filename);
         } else {
-            $finalFilename = $filename;
+            $finalFilename = $this->createSafeName($filename);
         }
 
         // replace filename reference by the final file
@@ -288,7 +285,7 @@ class Resumable
         if (!empty($this->instanceId)){
             $tmpChunkDir .= $this->instanceId . DIRECTORY_SEPARATOR;
         }
-        $tmpChunkDir .= $identifier;
+        $tmpChunkDir .= $this->createSafeName($identifier);
         $this->ensureDirExists($tmpChunkDir);
         return $tmpChunkDir;
     }
@@ -318,7 +315,7 @@ class Resumable
 
     public function tmpChunkFilename($filename, $chunkNumber)
     {
-        return $filename . '.' . str_pad($chunkNumber, 4, 0, STR_PAD_LEFT);
+        return $this->createSafeName($filename) . '.' . str_pad($chunkNumber, 4, 0, STR_PAD_LEFT);
     }
 
     public function getExclusiveFileHandle($name)
